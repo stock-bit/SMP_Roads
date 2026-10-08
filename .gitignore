@@ -1,0 +1,12 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# Scratch and test files
+scratch/
+extracted_kmz/
+test_out.kml
+.DS_Store
+Thumbs.db

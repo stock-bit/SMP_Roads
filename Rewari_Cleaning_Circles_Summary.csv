@@ -1,0 +1,31 @@
+circle_id,circle_name,wards_included,is_ward_split,split_details,road_length_km,road_segments,diff_target_km
+1,Circle 1,Ward 13,Yes,Split (Ward 13),14.925,222,-0.295
+2,Circle 2,Ward 13,Yes,Split (Ward 13),14.864,92,-0.356
+3,Circle 3,Ward 12,Yes,Split (Ward 12),14.065,235,-1.155
+4,Circle 4,Ward 12,Yes,Split (Ward 12),14.119,182,-1.101
+5,Circle 5,Ward 12,Yes,Split (Ward 12),13.898,160,-1.322
+6,Circle 6,Ward 11,Yes,Split (Ward 11),15.261,203,0.041
+7,Circle 7,Ward 11,Yes,Split (Ward 11),15.219,263,-0.001
+8,Circle 8,Ward 11,Yes,Split (Ward 11),15.165,239,-0.056
+9,Circle 9,Ward 6,Yes,Split (Ward 6),15.119,223,-0.102
+10,Circle 10,Ward 19,Yes,Split (Ward 19),15.164,240,-0.056
+11,Circle 11,Ward 31,No,Whole,15.512,254,0.292
+12,Circle 12,Ward 30,Yes,Split (Ward 30),15.234,199,0.014
+13,Circle 13,"Ward 30, Ward 32",Yes,"Split (Ward 30, Ward 32)",15.237,240,0.017
+14,Circle 14,"Ward 29, Ward 32",Yes,Split (Ward 32),14.796,269,-0.424
+15,Circle 15,"Ward 21, Ward 22",Yes,Split (Ward 21),15.285,241,0.065
+16,Circle 16,Ward 21,Yes,Split (Ward 21),15.766,267,0.546
+17,Circle 17,Ward 21,Yes,Split (Ward 21),15.696,311,0.476
+18,Circle 18,Ward 28,Yes,Split (Ward 28),15.274,227,0.054
+19,Circle 19,"Ward 2, Ward 28",Yes,Split (Ward 28),14.259,209,-0.961
+20,Circle 20,"Ward 26, Ward 27",Yes,Split (Ward 26),15.23,332,0.01
+21,Circle 21,"Ward 25, Ward 26",Yes,Split (Ward 26),14.94,290,-0.28
+22,Circle 22,"Ward 1, Ward 24",No,Whole,14.951,247,-0.269
+23,Circle 23,"Ward 14, Ward 15",No,Whole,15.182,319,-0.038
+24,Circle 24,"Ward 16, Ward 17, Ward 18, Ward 23",Yes,Split (Ward 23),15.233,350,0.013
+25,Circle 25,"Ward 3, Ward 8, Ward 9, Ward 10",No,Whole,16.918,399,1.698
+26,Circle 26,"Ward 4, Ward 5",Yes,Split (Ward 5),15.223,298,0.003
+27,Circle 27,Ward 5,Yes,Split (Ward 5),15.386,291,0.166
+28,Circle 28,"Ward 11, Ward 19, Ward 20, Ward 23",Yes,"Split (Ward 11, Ward 19, Ward 20, Ward 23)",16.264,288,1.043
+29,Circle 29,"Ward 6, Ward 19, Ward 20, Ward 23",Yes,"Split (Ward 6, Ward 19, Ward 20, Ward 23)",16.232,266,1.012
+30,Circle 30,"Ward 7, Ward 20, Ward 23",Yes,"Split (Ward 20, Ward 23)",16.184,318,0.963

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rewari Municipal Council – 30 Road Cleaning Circles & Staff Allotment GIS</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom GIS Dashboard Stylesheet -->
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+    <!-- App Header -->
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-logo">R</div>
+            <div>
+                <h1 class="brand-title">Municipal Council Rewari</h1>
+                <div class="brand-subtitle">SMP Road Cleaning Circles &amp; Sanitary Staff Allotment System (30 Circles)</div>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <span id="cloud-sync-badge" class="badge badge-live" title="Cloud Database Connection">
+                <span class="status-dot"></span> ☁️ Supabase Ready
+            </span>
+            <span class="badge badge-road">🛣️ 456.6 km SMP Roads</span>
+            <button id="btn-jump-roster" class="btn btn-sm btn-outline">📋 Allotment Roster</button>
+            <label class="btn btn-sm btn-success" style="cursor:pointer;" title="Upload updated circle KML/GeoJSON">
+                📥 Upload Circle KML
+                <input type="file" id="header-file-input" accept=".kml,.kmz,.geojson,.json" style="display:none;" />
+            </label>
+            <button id="btn-header-export-kml" class="btn btn-sm btn-primary">🌍 Download KML</button>
+            <button id="btn-header-export-csv" class="btn btn-sm btn-outline">📊 Export CSV</button>
+        </div>
+    </header>
+
+    <!-- App Container -->
+    <div class="app-container">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-target="panel-circles">30 Circles</button>
+                <button class="nav-tab" data-target="panel-upload">Upload &amp; Sync</button>
+                <button class="nav-tab" data-target="panel-stats">KPI Analytics</button>
+                <button class="nav-tab" data-target="panel-exports">Downloads</button>
+            </nav>
+
+            <div class="panel-body">
+                
+                <!-- Tab 1: Circles Directory -->
+                <div id="panel-circles" class="control-panel-tab active">
+                    <!-- Quick KPI Ribbon -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <span class="kpi-label">Total Road Length</span>
+                            <span id="stat-total-km" class="kpi-val" style="color:#34d399;">456.6 km</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Avg Road / Circle</span>
+                            <span id="stat-avg-km" class="kpi-val" style="color:#60a5fa;">15.22 km</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Total Sweepers</span>
+                            <span id="stat-total-sweepers" class="kpi-val" style="color:#f59e0b;">363</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Darogas Assigned</span>
+                            <span id="stat-total-darogas" class="kpi-val" style="color:#a78bfa;">30</span>
+                        </div>
+                    </div>
+
+                    <!-- Search Filter -->
+                    <div class="form-group">
+                        <input type="text" id="search-circles-input" class="form-control" placeholder="🔍 Search main road, landmark, daroga, ward..." />
+                    </div>
+
+                    <div class="small text-muted mb-2">
+                        ✨ Divided along <b>major identifiable corridors</b> (Circular Rd, Delhi Rd, Bawal Rd, Railway Line, etc.) for field clarity.
+                    </div>
+
+                    <!-- Circles List Container -->
+                    <div id="circle-list-container" style="max-height: calc(100vh - 350px); overflow-y: auto;">
+                        <!-- Rendered dynamically by CircleManager -->
+                    </div>
+                </div>
+
+                <!-- Tab 2: Upload & Sync -->
+                <div id="panel-upload" class="control-panel-tab">
+                    <div class="card-section">
+                        <div class="card-title">Upload Offline Updated KML</div>
+                        <p class="small text-muted mb-2">
+                            If you modify circle boundaries offline in Google Earth or QGIS, drop the updated <b>.kml</b>, <b>.kmz</b>, or <b>.geojson</b> file here.
+                        </p>
+                        <div id="upload-dropzone" class="upload-dropzone">
+                            <div class="dropzone-icon">📥</div>
+                            <div style="font-weight:600; font-size:0.85rem;">Click or Drag KML file here</div>
+                            <div class="small text-muted mt-1">Automatically recalculates road lengths per circle</div>
+                            <input type="file" id="kml-file-input" accept=".kml,.kmz,.geojson,.json" style="display:none;" />
+                        </div>
+                    </div>
+
+                    <div class="card-section">
+                        <div class="card-title">How It Works</div>
+                        <ol class="small text-muted" style="padding-left:1.2rem; line-height:1.6;">
+                            <li>Upload your revised boundary polygons.</li>
+                            <li>The engine intersects each polygon with the <b>official 7,674 SMP road segments</b>.</li>
+                            <li>Road lengths (km), segments, and sweeper daily targets are recalculating in real-time.</li>
+                            <li>Existing Daroga allotments and staff assignments are preserved automatically.</li>
+                        </ol>
+                        <button id="btn-reset-defaults" class="btn btn-outline btn-block mt-2" style="border-color:#ef4444; color:#f87171;">
+                            🔄 Reset to Default 30 Circles Plan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab 3: KPI Analytics -->
+                <div id="panel-stats" class="control-panel-tab">
+                    <div class="card-section">
+                        <div class="card-title">Workforce & Operational Baseline</div>
+                        <table style="width:100%; font-size:0.8rem; border-collapse:collapse;">
+                            <tr style="border-bottom:1px solid var(--border-color);"><td class="py-1 text-muted">City Target per Circle:</td><td class="text-end font-bold">15.220 km</td></tr>
+                            <tr style="border-bottom:1px solid var(--border-color);"><td class="py-1 text-muted">Daily Target / Sweeper:</td><td class="text-end font-bold">1,200 – 1,300 m</td></tr>
+                            <tr style="border-bottom:1px solid var(--border-color);"><td class="py-1 text-muted">Average Sweepers / Circle:</td><td class="text-end font-bold">12 Sweepers</td></tr>
+                            <tr style="border-bottom:1px solid var(--border-color);"><td class="py-1 text-muted">Standard Working Shift:</td><td class="text-end font-bold">06:00 AM – 02:00 PM</td></tr>
+                            <tr><td class="py-1 text-muted">Municipal Coverage:</td><td class="text-end text-success font-bold">100.0% (32 Wards)</td></tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Exports -->
+                <div id="panel-exports" class="control-panel-tab">
+                    <div class="card-section">
+                        <div class="card-title">Google Earth KML Export</div>
+                        <p class="small text-muted mb-2">Formatted KML containing translucent color-coded polygon boundaries and detailed inspection balloons.</p>
+                        <button id="btn-export-kml" class="btn btn-primary btn-block">🌍 Export KML (Google Earth)</button>
+                    </div>
+
+                    <div class="card-section">
+                        <div class="card-title">GIS GeoJSON Export</div>
+                        <p class="small text-muted mb-2">Clean GeoJSON format for loading into QGIS, ArcGIS, or Web applications.</p>
+                        <button id="btn-export-geojson" class="btn btn-outline btn-block">🗺️ Export GeoJSON</button>
+                    </div>
+
+                    <div class="card-section">
+                        <div class="card-title">Operations Roster (Excel / CSV)</div>
+                        <p class="small text-muted mb-2">Complete spreadsheet record of all 30 circles, arterial boundaries, Darogas, phone numbers, and sweeper counts.</p>
+                        <button id="btn-export-csv" class="btn btn-success btn-block">📊 Download Allotment CSV</button>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- Map & Roster View -->
+        <div class="map-view-wrapper">
+            
+            <!-- Map Container -->
+            <div class="map-container">
+                <!-- Floating Toolbar -->
+                <div class="map-floating-bar">
+                    <button id="map-toggle-roads" class="map-tool-btn active" style="border-left: 3px solid #00f5ff;" title="Toggle 7,674 SMP Road Segments">🛣️ SMP Roads</button>
+                    <button id="map-toggle-wards" class="map-tool-btn active" style="border-left: 3px solid #ffea00;" title="Toggle 32 Municipal Ward Boundaries">🏛️ 32 Wards</button>
+                    <button id="map-toggle-circles" class="map-tool-btn active" style="border-left: 3px solid #a855f7;" title="Toggle 30 Cleaning Circle Polygons">⭕ 30 Circles</button>
+                    <button id="map-toggle-labels" class="map-tool-btn active" title="Toggle Circle Center Badges">🏷️ Labels</button>
+                    <button id="map-reset-view" class="map-tool-btn" title="Recenter over Rewari">🎯 Center Map</button>
+                </div>
+
+                <!-- On-Map Legend Overlay -->
+                <div class="map-legend-box">
+                    <div class="map-legend-title">🗺️ Map Visual Guide</div>
+                    <div class="legend-row"><span class="legend-indicator legend-road"></span> <span><b>SMP Roads:</b> Electric Cyan (7,674)</span></div>
+                    <div class="legend-row"><span class="legend-indicator legend-ward"></span> <span><b>Ward Borders:</b> Neon Yellow Dashed</span></div>
+                    <div class="legend-row"><span class="legend-indicator legend-circle"></span> <span><b>Cleaning Circles:</b> Translucent Zones</span></div>
+                    <div class="legend-row"><span class="legend-indicator legend-sat"></span> <span><b>Basemap:</b> Clear Satellite View</span></div>
+                </div>
+
+                <div id="map"></div>
+            </div>
+
+            <!-- Master Allotment Section Below Map -->
+            <section id="section-master-roster" class="master-roster-section">
+                <div class="roster-header-bar">
+                    <div>
+                        <h2 style="font-size:1.25rem; font-weight:700; color:var(--text-primary);">
+                            📋 Master 30 Cleaning Circles &amp; Sanitary Daroga Allotment Roster
+                        </h2>
+                        <div class="small text-muted mt-1">
+                            Official municipal record of 30 circles divided over main roads, road lengths, Sanitary Daroga incharges, mobile numbers, and sweeper teams.
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="master-roster-search" class="form-control" style="width:280px;" placeholder="🔍 Filter roster..." />
+                    </div>
+                </div>
+
+                <div class="roster-stats-strip">
+                    <div class="stat-pill"><b>30</b> Circles Configured</div>
+                    <div class="stat-pill"><b id="pill-total-roads">456.6 km</b> SMP Roads</div>
+                    <div class="stat-pill"><b id="pill-total-workforce">363 Workers</b> Deployed</div>
+                    <div class="stat-pill"><b id="pill-total-darogas">30 Darogas</b> Assigned</div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>Circle</th>
+                                <th>Circle Sector &amp; Title</th>
+                                <th>Main Road Boundaries &amp; Landmarks</th>
+                                <th>Road Length</th>
+                                <th>Wards Covered</th>
+                                <th>Sanitary Daroga</th>
+                                <th>Mobile Number</th>
+                                <th style="text-align:center;">Sweepers</th>
+                                <th>Daily Target</th>
+                                <th>Equipment / Vehicles</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="master-roster-tbody">
+                            <!-- Populated dynamically by app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+
+    </div>
+
+    <!-- Edit Allotment Modal Dialog -->
+    <div id="edit-modal" class="modal-backdrop">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div id="modal-circle-title" class="modal-title">Edit Circle Allotment</div>
+                <button id="btn-close-modal" class="modal-close">&times;</button>
+            </div>
+            <form id="form-edit-allotment">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Circle Title</label>
+                        <input type="text" id="edit-circle-name" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Main Road Boundaries (Arterial Divide)</label>
+                        <input type="text" id="edit-arterials" class="form-control" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Key Landmarks (Easy Ground Identification)</label>
+                        <input type="text" id="edit-landmarks" class="form-control" required />
+                    </div>
+                    <div class="d-flex gap-3">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Sanitary Daroga / Supervisor</label>
+                            <input type="text" id="edit-daroga-name" class="form-control" required />
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Designation</label>
+                            <select id="edit-daroga-desig" class="form-select">
+                                <option value="Sanitary Daroga">Sanitary Daroga</option>
+                                <option value="Sanitary Inspector">Sanitary Inspector</option>
+                                <option value="Chief Sanitary Inspector">Chief Sanitary Inspector</option>
+                                <option value="Supervisor">Supervisor</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Mobile Number</label>
+                            <input type="text" id="edit-daroga-phone" class="form-control" placeholder="98120-XXXXX" />
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Number of Sweepers Deployed</label>
+                            <input type="number" id="edit-sweepers" class="form-control" min="1" max="50" required />
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <div class="form-group flex-1">
+                            <label class="form-label">Vehicles &amp; Equipment Allocated</label>
+                            <input type="text" id="edit-equipment" class="form-control" />
+                        </div>
+                        <div class="form-group flex-1">
+                            <label class="form-label">Shift Timings</label>
+                            <input type="text" id="edit-shift" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Field Notes / Remarks</label>
+                        <textarea id="edit-notes" class="form-control" rows="2" placeholder="Special instructions, VIP areas, high-traffic corridors..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="btn-cancel-modal" class="btn btn-outline">Cancel</button>
+                    <button type="submit" class="btn btn-success">💾 Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- External GIS Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+    <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Embedded Data & Application Modules -->
+    <script src="js/rewari-smp-data.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/circle-manager.js"></script>
+    <script src="js/kml-handler.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
